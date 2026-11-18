@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Needy - Meesho-Style Essential Marketplace</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            meesho: {
+              50: '#fdf2f8',
+              100: '#fce7f3',
+              500: '#ec4899',
+              600: '#db2777',
+              700: '#be185d',
+              800: '#9d174d',
+              900: '#831843',
+              primary: '#9f208c',
+              dark: '#79176b'
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .badge-free { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .meesho-gradient { background: linear-gradient(135deg, #9f208c 0%, #e91e63 100%); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-16 md:pb-0">
+
+  <!-- FIREBASE EMAIL/PASSWORD LOGIN GATE -->
+  <section id="authScreen" class="min-h-screen flex items-center justify-center px-4 py-10 bg-gradient-to-br from-pink-50 via-white to-purple-100">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-pink-100 p-7 sm:p-9">
+      <div class="text-center mb-7">
+        <div class="w-16 h-16 mx-auto rounded-2xl meesho-gradient flex items-center justify-center text-white text-3xl font-black shadow-lg">N</div>
+        <h1 class="mt-4 text-3xl font-extrabold text-transparent bg-clip-text meesho-gradient">Welcome to Needy</h1>
+        <p id="authSubtitle" class="text-sm text-slate-500 mt-2">Sign in to continue shopping</p>
+      </div>
+
+      <form id="authForm" class="space-y-4">
+        <div>
+          <label for="authEmail" class="block text-sm font-bold text-slate-700 mb-1">Email address</label>
+          <input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-500">
+        </div>
+        <div>
+          <label for="authPassword" class="block text-sm font-bold text-slate-700 mb-1">Password</label>
+          <input id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="Enter your password"
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-500">
+        </div>
+        <p id="authError" role="alert" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-3"></p>
+        <button id="authSubmit" type="submit" class="w-full py-3 rounded-xl meesho-gradient text-white font-extrabold shadow-md hover:opacity-95">
+          Login
+        </button>
+      </form>
+
+      <button id="toggleAuthMode" type="button" class="w-full mt-4 text-sm font-semibold text-purple-800 hover:text-pink-600">
+        New to Needy? Create an account
+      </button>
+      <button id="forgotPassword" type="button" class="w-full mt-3 text-xs text-slate-500 hover:text-pink-600">
+        Forgot password?
+      </button>
+      <p class="text-[11px] text-slate-400 text-center mt-6">Your account is secured with Firebase Authentication.</p>
+    </div>
+  </section>
+
+  <div id="appShell" class="hidden">
+
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
+    <!-- Top Free Delivery Banner -->
+    <div class="meesho-gradient text-white text-xs py-1.5 px-4 text-center font-bold tracking-wide">
+      🎉 FREE Delivery on ALL Orders (Delivery Fee: ₹0) | Shop Directly from Host on Needy!
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+      <!-- Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('shop')">
+        <div class="w-10 h-10 rounded-xl meesho-gradient flex items-center justify-center text-white font-black text-2xl shadow-md">
+          N
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text meesho-gradient">
+            Needy
+          </h1>
+          <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider -mt-1">Host & Resell Marketplace</p>
+        </div>
+      </div>
+
+      <!-- Desktop Search Bar -->
+      <div class="flex-1 max-w-xl relative hidden md:block">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search Kurtis, Headphones, Kitchen essentials, Shoes..." 
+          class="w-full pl-10 pr-4 py-2 bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-sm rounded-lg border border-transparent focus:border-pink-500 focus:outline-none transition-all">
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Host Dashboard Toggle Button -->
+        <button onclick="switchTab('host')" id="btnNavHost" class="flex items-center gap-2 px-3 py-2 text-xs sm:text-sm font-semibold text-purple-900 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition">
+          <i class="fa-solid fa-store text-pink-600"></i>
+          <span class="hidden sm:inline">Host Panel</span>
+        </button>
+
+        <!-- Customer Orders -->
+        <button onclick="switchTab('orders')" id="btnNavOrders" class="flex items-center gap-2 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:text-pink-600 hover:bg-slate-50 rounded-lg transition">
+          <i class="fa-solid fa-box-archive text-slate-500"></i>
+          <span class="hidden sm:inline">My Orders</span>
+        </button>
+
+        <!-- Logout -->
+        <button onclick="logoutUser()" id="btnLogout" class="flex items-center gap-2 px-3 py-2 text-xs sm:text-sm font-semibold text-rose-700 hover:bg-rose-50 rounded-lg transition">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span class="hidden sm:inline">Logout</span>
+        </button>
+
+        <!-- Cart Icon -->
+        <button onclick="openCartModal()" class="relative p-2 text-slate-700 hover:text-pink-600 transition">
+          <i class="fa-solid fa-bag-shopping text-xl"></i>
+          <span id="cartBadge" class="absolute -top-1 -right-1 bg-pink-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Search Bar -->
+    <div class="px-4 pb-3 md:hidden">
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input type="text" id="mobileSearchInput" oninput="filterProducts(true)" placeholder="Search products on Needy..." 
+          class="w-full pl-10 pr-4 py-2 bg-slate-100 text-sm rounded-lg border border-transparent focus:border-pink-500 focus:outline-none">
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+    <!-- VIEW: SHOP / MAIN MARKETPLACE -->
+    <section id="shopView">
+      
+      <!-- Hero Banner -->
+      <div class="mb-6 rounded-2xl meesho-gradient text-white p-6 sm:p-8 shadow-lg relative overflow-hidden">
+        <div class="relative z-10 max-w-xl">
+          <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider mb-3">100% Trusted Direct Seller Store</span>
+          <h2 class="text-2xl sm:text-4xl font-extrabold leading-tight mb-2">Shop Essential Needy Items at Lowest Prices</h2>
+          <p class="text-sm sm:text-base text-pink-100 mb-4">Direct delivery from Host to your home with <b>Zero Delivery Charge</b>.</p>
+          <div class="flex flex-wrap gap-4 text-xs font-medium">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-truck-fast text-emerald-300"></i> Free Delivery (₹0)</span>
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-hand-holding-dollar text-emerald-300"></i> Cash on Delivery</span>
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-mobile-screen-button text-emerald-300"></i> PhonePe / FamPay UPI</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories Pills -->
+      <div class="mb-6">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Top Categories</h3>
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2" id="categoryContainer">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Featured Products -->
+      <section class="mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-900">⭐ Featured Products</h2>
+            <p class="text-xs text-slate-500">Handpicked products from Needy</p>
+          </div>
+        </div>
+        <div id="featuredProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5"></div>
+      </section>
+
+      <!-- New Arrivals -->
+      <section class="mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-900">🆕 New Arrivals</h2>
+            <p class="text-xs text-slate-500">Recently added to our store</p>
+          </div>
+        </div>
+        <div id="newArrivalsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5"></div>
+      </section>
+
+      <!-- Products Grid Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Products For You</h2>
+          <p class="text-xs text-slate-500" id="productCountText">Showing all available items</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <label class="text-xs font-semibold text-slate-500">Sort By:</label>
+          <select id="sortSelect" onchange="filterProducts()" class="bg-white text-xs font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-pink-500">
+            <option value="popular">Popularity</option>
+            <option value="low-high">Price: Low to High</option>
+            <option value="high-low">Price: High to Low</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Products Grid (Meesho Style) -->
+      <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- VIEW: HOST DASHBOARD -->
+    <section id="hostView" class="hidden">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900">Host Seller Panel</h2>
+          <p class="text-sm text-slate-500">Post items you have, manage your stock, and update customer order delivery statuses.</p>
+        </div>
+        <button onclick="openAddProductModal()" class="px-4 py-2.5 meesho-gradient text-white font-semibold text-sm rounded-xl shadow-md flex items-center gap-2 hover:opacity-95 transition">
+          <i class="fa-solid fa-plus"></i> Add New Product
+        </button>
+      </div>
+
+      <!-- Host Stats -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-400">Total Products</p>
+          <h3 class="text-2xl font-bold text-slate-800 mt-1" id="statProducts">0</h3>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-400">Total Orders</p>
+          <h3 class="text-2xl font-bold text-purple-700 mt-1" id="statOrders">0</h3>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-400">Pending Deliveries</p>
+          <h3 class="text-2xl font-bold text-amber-600 mt-1" id="statPending">0</h3>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-xs font-semibold text-slate-400">Total Sales Value</p>
+          <h3 class="text-2xl font-bold text-emerald-600 mt-1" id="statRevenue">₹0</h3>
+        </div>
+      </div>
+
+      <!-- Tabs inside Host Dashboard -->
+      <div class="border-b border-slate-200 mb-6">
+        <nav class="flex gap-6">
+          <button id="tabHostProductsBtn" onclick="switchHostTab('products')" class="pb-3 text-sm font-bold border-b-2 border-pink-600 text-pink-600">
+            My Posted Products
+          </button>
+          <button id="tabHostOrdersBtn" onclick="switchHostTab('orders')" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+            Customer Orders & Delivery Status
+          </button>
+        </nav>
+      </div>
+
+      <!-- Host Products List -->
+      <div id="hostProductsSection">
+        <div id="hostProductList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <!-- Host Orders Management List -->
+      <div id="hostOrdersSection" class="hidden">
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
+                  <th class="p-4">Order ID & Date</th>
+                  <th class="p-4">Customer Info</th>
+                  <th class="p-4">Items & Amount</th>
+                  <th class="p-4">Payment Method</th>
+                  <th class="p-4">Delivery Status</th>
+                  <th class="p-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="hostOrdersTable" class="divide-y divide-slate-100 text-sm">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: CUSTOMER ORDERS TRACKING -->
+    <section id="ordersView" class="hidden">
+      <div class="max-w-3xl mx-auto">
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">My Placed Orders</h2>
+        <p class="text-sm text-slate-500 mb-6">Track real-time shipment updates provided by your host.</p>
+
+        <div id="customerOrdersContainer" class="space-y-4">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PRODUCT DETAIL MODAL (Meesho Style Gallery & Specs) -->
+  <div id="productModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl relative my-auto max-h-[92vh] flex flex-col md:flex-row">
+      <button onclick="closeModal('productModal')" class="absolute top-3 right-3 z-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full w-8 h-8 flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Left: Image Gallery & Carousel -->
+      <div class="md:w-1/2 p-4 bg-slate-50 flex flex-col items-center justify-center border-r border-slate-100">
+        <div class="w-full h-64 sm:h-80 rounded-xl overflow-hidden bg-white mb-3 flex items-center justify-center border border-slate-200">
+          <img id="modalMainImage" src="" alt="Product" class="w-full h-full object-contain p-2">
+        </div>
+        <!-- Thumbnails row -->
+        <div id="modalThumbnails" class="flex gap-2 overflow-x-auto w-full no-scrollbar justify-center">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <!-- Right: Product Information & Action Buttons -->
+      <div class="md:w-1/2 p-5 sm:p-6 flex flex-col justify-between overflow-y-auto">
+        <div>
+          <span id="modalCategory" class="text-xs font-bold text-pink-600 bg-pink-50 px-2.5 py-1 rounded-full uppercase tracking-wider"></span>
+          <h2 id="modalTitle" class="text-xl font-bold text-slate-900 mt-2"></h2>
+          
+          <!-- Rating -->
+          <div class="flex items-center gap-2 mt-2">
+            <span class="bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded flex items-center gap-1">
+              <span id="modalRating">4.2</span> <i class="fa-solid fa-star text-[10px]"></i>
+            </span>
+            <span class="text-xs text-slate-400 font-medium">150+ Happy Buyers</span>
+          </div>
+
+          <!-- Price Display (Directly below Title/Rating) -->
+          <div class="mt-4 pt-3 border-t border-slate-100">
+            <div class="flex items-baseline gap-2">
+              <span id="modalPrice" class="text-3xl font-black text-slate-900"></span>
+              <span id="modalOldPrice" class="text-sm text-slate-400 line-through"></span>
+              <span class="text-xs font-bold text-emerald-600">Special Discount</span>
+            </div>
+            <!-- Delivery Fee Zero badge -->
+            <div class="mt-2 inline-flex items-center gap-1.5 badge-free text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+              <i class="fa-solid fa-truck-fast"></i> Delivery Fee: ₹0 / FREE DELIVERY
+            </div>
+          </div>
+
+          <!-- Shipping Details -->
+          <div class="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+            <div class="flex items-center gap-2 text-slate-700 font-semibold">
+              <i class="fa-solid fa-calendar-check text-purple-700"></i>
+              <span>Estimated Delivery: <strong id="modalDeliveryTime" class="text-purple-900">3-5 Days</strong></span>
+            </div>
+            <p class="text-slate-500 pl-6">Shipped directly by Host with complete order tracking.</p>
+          </div>
+
+          <!-- Description -->
+          <div class="mt-4">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Product Details & Specs</h4>
+            <p id="modalDescription" class="text-xs text-slate-600 leading-relaxed"></p>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3">
+          <button id="addToCartBtn" class="flex-1 py-3 bg-pink-50 hover:bg-pink-100 text-pink-700 font-bold text-sm rounded-xl border border-pink-200 transition">
+            Add to Cart
+          </button>
+          <button id="buyNowBtn" class="flex-1 py-3 meesho-gradient text-white font-bold text-sm rounded-xl shadow-lg hover:opacity-95 transition">
+            Buy Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOST: ADD NEW PRODUCT MODAL -->
+  <div id="addProductModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w
